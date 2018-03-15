@@ -458,16 +458,26 @@ def conv_backward_naive(dout, cache):
     pad = conv_param['pad']
     x_pad = np.pad(x, ((0,), (0,), (pad,), (pad,)), 'constant')
 
-    # for n in range(N):
-    #     for row in range(H_out):
-    #         for col in range(W_out):
-    #             for c in range(C):
-    #                 v_start = row * stride
-    #                 v_end = v_start + HH
-    #                 h_start = col * stride
-    #                 h_end = h_start + WW
-    #                 a_slice = x_pad[]
-
+    dx_pad = np.zeros(x_pad.shape)
+    dw = np.zeros(w.shape)
+    db = np.zeros(b.shape)
+    for row in range(H_out):
+        for col in range(W_out):
+            row_start = row * stride
+            row_end = row_start + HH
+            col_start = col * stride
+            col_end = col_start + WW
+            x_slice = x_pad[:, :, row_start:row_end, col_start:col_end]
+            # x_slice.shape = (N, C, HH, WW)
+            # w.shape = (F, C, HH, WW)
+            # dout.shape = (N, F, H_out, W_out)
+            dx_pad[:, :, row_start:row_end, col_start:col_end] += np.sum(
+                dout[:, :, row, col, None, None, None] * w, axis=1)
+            dx = dx_pad[:, :, pad:-pad, pad:-pad]
+            dw += np.sum(
+                dout[:, :, row, col, None, None, None] *
+                x_slice[:, None, :, :, :], axis=0)
+    db = np.sum(dout, axis=(0, 2, 3))
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
