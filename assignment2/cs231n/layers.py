@@ -503,7 +503,20 @@ def max_pool_forward_naive(x, pool_param):
     ###########################################################################
     # TODO: Implement the max pooling forward pass                            #
     ###########################################################################
-    pass
+    N, C, H, W = x.shape
+    pool_height, pool_width = \
+        pool_param['pool_height'], pool_param['pool_width']
+    H_out = int(H / pool_height)
+    W_out = int(W / pool_width)
+    out = np.zeros([N, C, H_out, W_out])
+    for row in range(H_out):
+        for col in range(W_out):
+            row_start = row * pool_height
+            row_end = row_start + pool_height
+            col_start = col * pool_width
+            col_end = col_start + pool_width
+            x_slice = x[:, :, row_start:row_end, col_start:col_end]
+            out[:, :, row, col] = np.max(x_slice, axis=(2, 3))
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -526,7 +539,28 @@ def max_pool_backward_naive(dout, cache):
     ###########################################################################
     # TODO: Implement the max pooling backward pass                           #
     ###########################################################################
-    pass
+    x, pool_param = cache
+    N, C, H, W = x.shape
+    pool_height, pool_width = \
+        pool_param['pool_height'], pool_param['pool_width']
+    H_out = int(H / pool_height)
+    W_out = int(W / pool_width)
+    dx = np.zeros(x.shape)
+    for row in range(H_out):
+        for col in range(W_out):
+            row_start = row * pool_height
+            row_end = row_start + pool_height
+            col_start = col * pool_width
+            col_end = col_start + pool_width
+            x_slice = x[:, :, row_start:row_end, col_start:col_end]
+            # x_slice.shape = (N, C, pool_height, pool_width)
+            out_slice = np.max(x_slice, axis=(2, 3))
+            # out_slice.shape = (N, C)
+            mask = out_slice[:, :, None, None] == x_slice
+            # mask.shape = (N, C, pool_height, pool_width)
+            # dout.shape = (N, C, H_out, W_out)
+            dx[:, :, row_start:row_end, col_start:col_end] += \
+                dout[:, :, row, col, None, None] * mask
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -564,7 +598,10 @@ def spatial_batchnorm_forward(x, gamma, beta, bn_param):
     # version of batch normalization defined above. Your implementation should#
     # be very short; ours is less than five lines.                            #
     ###########################################################################
-    pass
+    N, C, H, W = x.shape
+    x_trans = np.transpose(x, [0, 2, 3, 1]).reshape((-1, C))
+    out_trans, cache = batchnorm_forward(x_trans, gamma, beta, bn_param)
+    out = np.transpose(out_trans.reshape((N, H, W, C)), [0, 3, 1, 2])
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -594,7 +631,10 @@ def spatial_batchnorm_backward(dout, cache):
     # version of batch normalization defined above. Your implementation should#
     # be very short; ours is less than five lines.                            #
     ###########################################################################
-    pass
+    N, C, H, W = dout.shape
+    dout_trans = np.transpose(dout, [0, 2, 3, 1]).reshape((-1, C))
+    dx_trans, dgamma, dbeta = batchnorm_backward(dout_trans, cache)
+    dx = np.transpose(dx_trans.reshape(N, H, W, C), [0, 3, 1, 2])
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
