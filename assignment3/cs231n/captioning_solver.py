@@ -112,7 +112,6 @@ class CaptioningSolver(object):
         if not hasattr(optim, self.update_rule):
             raise ValueError('Invalid update_rule "%s"' % self.update_rule)
         self.update_rule = getattr(optim, self.update_rule)
-
         self._reset()
 
 

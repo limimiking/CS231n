@@ -1,0 +1,4 @@
+MNIST_data/*
+coco_captioning/*
+*.npz
+*.ckpt*
